@@ -1,36 +1,86 @@
 #include <iostream>
+#include <chrono>  
 #include "tensor.h"
 #include "ops.h"
+#include <cmath>
+
+
+bool verify_tensors(const Tensor& T1, const Tensor& T2, float epsilon = 1e-4) {
+    if (T1.get_shape() != T2.get_shape()) {
+        std::cout << "FAILURE: Shapes differ!" << std::endl;
+        return false;
+    }
+
+    int rows = T1.get_shape()[0];
+    int cols = T1.get_shape()[1];
+    int mismatch_count = 0;
+
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            float diff = std::abs(T1(i, j) - T2(i, j));
+            if (diff > epsilon) {
+                if (mismatch_count < 5) {
+                    std::cout << "Mismatch at (" << i << "," << j << "): " 
+                              << T1(i, j) << " vs " << T2(i, j) << std::endl;
+                }
+                mismatch_count++;
+            }
+        }
+    }
+
+    if (mismatch_count > 0) {
+        std::cout << "FAILURE: Found " << mismatch_count << " mismatches." << std::endl;
+        return false;
+    }
+    
+    std::cout << "SUCCESS: All " << (rows * cols) << " elements match!" << std::endl;
+    return true;
+}
+
 
 int main() {
-    // Create A (2x3)
-    // 1 2 3
-    // 4 5 6
-    Tensor A({2, 3});
-    A(0,0)=1; A(0,1)=2; A(0,2)=3;
-    A(1,0)=4; A(1,1)=5; A(1,2)=6;
+    int size = 1024; 
+    std::cout << "Initializing " << size << "x" << size << " tensors...\n";
+    
+    Tensor A({size, size});
+    Tensor B({size, size});
+    Tensor C_naive({size, size});
+    Tensor C_avx({size, size});
 
-    // Create B (3x2)
-    // 7 8
-    // 9 1
-    // 2 3
-    Tensor B({3, 2});
-    B(0,0)=7; B(0,1)=8;
-    B(1,0)=9; B(1,1)=1;
-    B(2,0)=2; B(2,1)=3;
+    // Fill with dummy data (all 1.0f)
+    A.fill(1.0f);
+    B.fill(1.0f);
 
-    // Create C (2x2) to hold the result
-    Tensor C({2, 2});
+    // Benchmark Naive
+    std::cout << "Running Naive MatMul..." << std::endl;
+    auto start = std::chrono::high_resolution_clock::now();
+    
+    matmul_naive(A, B, C_naive);
+    
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> diff_naive = end - start;
+    std::cout << "Naive Time: " << diff_naive.count() << " s\n";
 
-    // Run MatMul
-    std::cout << "Running Naive Matrix Multiplication...\n";
-    matmul_naive(A, B, C);
+    // Benchmark SIMD
+    std::cout << "Running SIMD MatMul..." << std::endl;
+    start = std::chrono::high_resolution_clock::now();
+    
+    matmul_simd(A, B, C_avx); 
+    
+    end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> diff_simd = end - start;
+    std::cout << "SIMD Time:   " << diff_simd.count() << " s\n";
 
-    // Print Result
-    // Expected:
-    // [ (1*7 + 2*9 + 3*2)  (1*8 + 2*1 + 3*3) ]  -> [ 31  19 ]
-    // [ (4*7 + 5*9 + 6*2)  (4*8 + 5*1 + 6*3) ]  -> [ 85  55 ]
-    C.print();
+    // Calculate Speedup
+    double speedup = diff_naive.count() / diff_simd.count();
+    std::cout << "Speedup: " << speedup << "x" << std::endl;
+
+    std::cout << "Verifying results..." << std::endl;
+    if (verify_tensors(C_naive, C_avx)) {
+        std::cout << "Benchmark Valid." << std::endl;
+    } else {
+        std::cout << "Benchmark Invalid: Logic Error in SIMD implementation." << std::endl;
+    }
 
     return 0;
 }

@@ -34,7 +34,7 @@ float& Tensor::operator()(int row, int col) {
 }
 
 // Read-only version
-float Tensor::operator()(int row, int col) const {
+const float& Tensor::operator()(int row, int col) const {
     int index = row * shape_[1] + col;
     return data_[index];
 }

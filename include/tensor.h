@@ -13,7 +13,7 @@ public:
     // Data Access
     float& operator()(int row, int col);
     
-    float operator()(int row, int col) const;
+    const float& operator()(int row, int col) const;
 
     void fill(float value);
 

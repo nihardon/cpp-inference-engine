@@ -4,20 +4,29 @@ project(InferenceEngine VERSION 1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+if(APPLE AND CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
+    # Homebrew installs libomp here on Apple Silicon
+    set(OpenMP_ROOT "/opt/homebrew/opt/libomp")
+    # Hinting the prefix path helps find_package locate it
+    list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/libomp")
+endif()
+
+find_package(OpenMP REQUIRED)
+
 include_directories(include)
 file(GLOB SOURCES "src/*.cpp")
 add_executable(engine ${SOURCES})
 
-# PLATFORM SPECIFIC FLAGS
+target_link_libraries(engine PRIVATE OpenMP::OpenMP_CXX)
+
 if(APPLE AND CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
-    # Apple Silicon: NEON is enabled by default, but we can add O3
-    message(STATUS "Detected Apple Silicon (ARM64). Enabling NEON optimizations.")
-    target_compile_options(engine PRIVATE -O3)
+    message(STATUS "Detected Apple Silicon. Linking Homebrew OpenMP.")
+    target_include_directories(engine PRIVATE ${OpenMP_ROOT}/include)
+    target_compile_options(engine PRIVATE -Xpreprocessor -fopenmp -O3)
+    target_link_libraries(engine PRIVATE ${OpenMP_ROOT}/lib/libomp.dylib)
 elseif(MSVC)
-    # Windows
-    add_compile_options(/arch:AVX2 /O2)
+    add_compile_options(/arch:AVX2 /O2 /openmp)
 else()
-    # Linux / Intel Mac
-    message(STATUS "Detected Intel/AMD. Enabling AVX2.")
-    add_compile_options(-mavx2 -mfma -O3)
+    message(STATUS "Detected Intel/AMD. Enabling AVX2 + OpenMP.")
+    add_compile_options(-mavx2 -mfma -O3 -fopenmp)
 endif()

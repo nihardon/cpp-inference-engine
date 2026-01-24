@@ -39,7 +39,7 @@ void matmul_simd(const Tensor& A, const Tensor& B, Tensor& C){
     C.fill(0.0f);
 
 #if defined(__aarch64__) || defined(__ARM_NEON)
-    
+    #pragma omp parallel for
     for (int i = 0; i < M; i++) {
         for (int k = 0; k < K; k++) {
 
@@ -69,7 +69,7 @@ void matmul_simd(const Tensor& A, const Tensor& B, Tensor& C){
     }
 
 #elif defined(__AVX2__)
-
+    #pragma omp parallel for
     for (int i = 0; i < M; i++) {
         for (int k = 0; k < K; k++) {
             __m256 a_vec = _mm256_set1_ps(A(i, k));

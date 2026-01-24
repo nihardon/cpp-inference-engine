@@ -1,0 +1,15 @@
+# Build directories
+build/
+bin/
+lib/
+
+# IDE settings (VS Code, etc.)
+.vscode/
+.idea/
+
+# OS junk
+.DS_Store
+
+# Executables (just in case)
+engine
+*.o

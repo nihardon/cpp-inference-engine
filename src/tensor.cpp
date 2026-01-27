@@ -13,9 +13,21 @@ Tensor::Tensor(std::vector<int> shape) {
     data_ = new float[size_];
 }
 
+Tensor::Tensor(Tensor&& other) noexcept 
+    : shape_(std::move(other.shape_)), 
+      size_(other.size_), 
+      data_(other.data_) {
+    
+    other.data_ = nullptr;
+    other.size_ = 0;
+}
+
 // Destructor
 Tensor::~Tensor() {
-    delete[] data_;
+    if (data_ != nullptr) {
+        delete[] data_;
+        data_ = nullptr;
+    }
 }
 
 // Operator Overloading for 2D Indexing

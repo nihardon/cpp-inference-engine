@@ -4,10 +4,11 @@ A high-performance C++ inference engine featuring SIMD-optimized matrix multipli
 
 ## Features
 
-- **Tensor Class**: Efficient 2D tensor implementation with intuitive indexing
+- **Tensor Class**: Efficient 2D tensor implementation with intuitive indexing and move semantics
 - **SIMD-Optimized Matrix Multiplication**: Platform-aware implementations using:
   - **ARM NEON** for Apple Silicon (M1/M2/M3 chips)
   - **Intel AVX2** for x86-64 processors
+- **Activation Functions**: ReLU (Rectified Linear Unit) with parallel processing
 - **Parallel Processing**: OpenMP integration for multi-threaded execution
 - **Benchmarking Suite**: Built-in performance comparison between naive and optimized implementations
 - **Cross-Platform**: Automatic platform detection and appropriate SIMD instruction selection
@@ -119,6 +120,12 @@ t.fill(1.0f);
 // Get shape information
 auto shape = t.get_shape();  // Returns {rows, cols}
 int size = t.get_size();     // Returns total elements
+
+// Access raw data pointer (useful for SIMD operations)
+float* data = t.data();
+
+// Move semantics (copy constructor/assignment deleted for performance)
+Tensor moved = std::move(t);
 ```
 
 ### Matrix Multiplication Implementations
@@ -135,6 +142,11 @@ Optimized matrix multiplication leveraging:
 
 The SIMD implementation automatically detects the target platform and uses the appropriate instruction set.
 
+### Activation Functions
+
+#### ReLU (Rectified Linear Unit)
+The `relu()` function applies the ReLU activation function element-wise: `Z = max(0, X)`. It's parallelized using OpenMP for efficient processing of large tensors.
+
 ## Performance
 
 The SIMD-optimized implementation typically achieves **10-20x speedup** over the naive implementation on modern hardware, depending on:
@@ -150,7 +162,7 @@ cpp-inference-engine/
 ├── CMakeLists.txt          # Build configuration
 ├── include/
 │   ├── tensor.h            # Tensor class declaration
-│   └── ops.h               # Matrix multiplication operations
+│   └── ops.h               # Matrix multiplication and activation functions
 ├── src/
 │   ├── tensor.cpp          # Tensor class implementation
 │   ├── ops.cpp             # SIMD-optimized operations
@@ -172,6 +184,11 @@ The code automatically detects the target platform at compile time:
 - **AVX2**: 256-bit registers processing 8 single-precision floats simultaneously
 - **NEON**: 128-bit registers processing 4 single-precision floats simultaneously
 - **FMA Instructions**: `_mm256_fmadd_ps` (AVX2) and `vfmaq_f32` (NEON) for efficient multiply-accumulate
+
+### Design Decisions
+
+- **Move Semantics**: Tensor class uses move semantics and deleted copy constructor/assignment to prevent expensive deep copies and encourage efficient memory management
+- **Raw Data Access**: The `data()` method provides direct access to the underlying memory buffer for advanced optimizations and SIMD operations
 
 ## Contributing
 

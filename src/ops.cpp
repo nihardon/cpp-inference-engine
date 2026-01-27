@@ -93,3 +93,15 @@ void matmul_simd(const Tensor& A, const Tensor& B, Tensor& C){
     matmul_naive(A, B, C);
 #endif
 }
+
+void relu(Tensor& Z) {
+    float* data = Z.data();
+    int size = Z.get_size();
+
+    #pragma omp parallel for
+    for (int i = 0; i < size; i++) {
+        if (data[i] < 0) {
+            data[i] = 0.0f;
+        }
+    }
+}

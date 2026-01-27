@@ -12,9 +12,8 @@ PYBIND11_MODULE(engine, m) {
         .def(py::init<std::vector<int>>())
         .def("fill", &Tensor::fill)
         .def("print", &Tensor::print)
-        .def("data_ptr", [](const Tensor& t) {
-            return (uintptr_t)t.data();
-        });
+        .def("data_ptr", [](const Tensor& t) {return (uintptr_t)t.data();})
+        .def("shape", &Tensor::get_shape);
 
     m.def("matmul", [](const Tensor& A, const Tensor& B) {
         
@@ -26,4 +25,6 @@ PYBIND11_MODULE(engine, m) {
         
         return C;
     }, "Perform Matrix Multiplication using SIMD");
+
+    m.def("relu", &relu, "Apply ReLU activation in-place");
 }

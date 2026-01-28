@@ -1,9 +1,10 @@
 #include "tensor.h"
+#include "arena.h"
 #include <stdexcept>
 
 // Constructor
-Tensor::Tensor(std::vector<int> shape) {
-    shape_ = shape;
+Tensor::Tensor(std::vector<int> shape)
+    :   owns_memory_(true), shape_(shape) {
     
     size_ = 1;
     for (int dim : shape) {
@@ -13,10 +14,20 @@ Tensor::Tensor(std::vector<int> shape) {
     data_ = new float[size_];
 }
 
+Tensor::Tensor(std::vector<int> shape, Arena& arena) 
+    : shape_(shape), owns_memory_(false) {
+    
+    size_ = 1;
+    for (int dim : shape) size_ *= dim;
+    
+    data_ = arena.alloc(size_);
+}
+
 Tensor::Tensor(Tensor&& other) noexcept 
     : shape_(std::move(other.shape_)), 
       size_(other.size_), 
-      data_(other.data_) {
+      data_(other.data_),
+      owns_memory_(other.owns_memory_) {
     
     other.data_ = nullptr;
     other.size_ = 0;
@@ -24,7 +35,7 @@ Tensor::Tensor(Tensor&& other) noexcept
 
 // Destructor
 Tensor::~Tensor() {
-    if (data_ != nullptr) {
+if (owns_memory_ && data_ != nullptr) {
         delete[] data_;
         data_ = nullptr;
     }
@@ -70,4 +81,14 @@ void Tensor::print() const {
         }
         std::cout << "]\n";
     }
+}
+
+Tensor Tensor::clone() const {
+    Tensor copy(shape_); 
+    
+    if (data_ && copy.data_) {
+        std::memcpy(copy.data_, data_, size_ * sizeof(float));
+    }
+    
+    return copy;
 }

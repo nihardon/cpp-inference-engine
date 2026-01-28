@@ -1,11 +1,16 @@
 #pragma once
 #include <vector>
 #include <iostream>
+#include <cstring> // For std::memcpy
+
+class Arena;
 
 class Tensor {
 public:
     // Constructor
     Tensor(std::vector<int> shape);
+
+    Tensor(std::vector<int> shape, Arena& arena);
     
     Tensor(Tensor&& other) noexcept;
     
@@ -25,6 +30,8 @@ public:
 
     void print() const;
 
+    Tensor clone() const;
+    
     // Getters
     float* data() { return data_; }
     const float* data() const { return data_; }
@@ -34,5 +41,7 @@ public:
 private:
     std::vector<int> shape_;
     float* data_;
-    int size_;               
+    int size_;   
+
+    bool owns_memory_;            
 };

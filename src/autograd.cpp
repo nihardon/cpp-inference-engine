@@ -62,9 +62,8 @@ std::shared_ptr<Variable> matmul(std::shared_ptr<Variable> a, std::shared_ptr<Va
     int N = b->data.get_shape()[1];
     Tensor result_data({M, N});
     
-    // Run the high-performance kernel
     ops::matmul(a->data, b->data, result_data);
-    // 2. CREATE NODE
+    // Create Node
     auto out = std::make_shared<Variable>(std::move(result_data));
     out->children = {a, b};
 
